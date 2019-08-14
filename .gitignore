@@ -103,5 +103,8 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-#macOS folder file
+# macOS folder file
 .DS_store
+
+# ignoring images
+.jpg
