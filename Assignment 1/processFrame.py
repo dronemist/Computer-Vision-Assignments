@@ -15,24 +15,30 @@ def FrameCapture(path):
 
     # Video writer
     height, width, layers = image.shape
-    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    # video = cv2.VideoWriter('output2.mp4', fourcc, 15, (width, height))
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    video = cv2.VideoWriter('output2.avi', fourcc, 15, (width, height))
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video = cv2.VideoWriter('output.mp4', fourcc, 15, (width, height))
+
     # background subtractor
     backgroundSubtractor = cv2.createBackgroundSubtractorMOG2()
 
     # cleaning image kernel
     kernel = np.ones((3,3), np.uint8)
-    vidObj_temp = cv2.VideoCapture(path)
-    count_temp = 0	
-    success_temp, image_temp = vidObj.read()
-    while success_temp:
-        success_temp, image = vidObj_temp.read()
-        foreground = backgroundSubtractor.apply(image, learningRate = 0.01)
-        if count_temp == 50:
+
+    # making the background subtractor learn
+    vidObjLearn = cv2.VideoCapture(path)
+    countLearn = 0	
+    successLearn, imageLearn = vidObjLearn.read()
+    while successLearn:
+
+        countLearn += 1
+
+        successLearn, imageLearn = vidObjLearn.read()
+        foregroundLearn = backgroundSubtractor.apply(imageLearn, learningRate = 0.01)
+
+        if countLearn == 50:
             break
 	
+    # Processing the image
     while success: 
   
         # vidObj object calls read 
@@ -52,15 +58,16 @@ def FrameCapture(path):
         # Hough lines 
         lines = cv2.HoughLines(cannyImage, 1, np.pi/180, 150)
         temp = 0
-        # print(np.shape(lines))
+
+        # Taking the average of the lines
         if np.shape(lines) == ():
-            num_lines = 0
+            numLines = 0
         else:
-            num_lines = (np.shape(lines))[0]
-        x1_sum = 0
-        y1_sum = 0
-        x2_sum = 0
-        y2_sum = 0		
+            numLines = (np.shape(lines))[0]
+        x1Sum = 0
+        y1Sum = 0
+        x2Sum = 0
+        y2Sum = 0		
         if lines is not None:
             # Applying hough transform
             r = 875
@@ -75,23 +82,23 @@ def FrameCapture(path):
                     x2 = int(x0 - r*(-b))
                     y2 = int(y0 - r*(a))
                     temp = temp + 1
-                    x1_sum = x1_sum + x1
-                    x2_sum = x2_sum + x2
-                    y1_sum = y1_sum + y1
-                    y2_sum = y2_sum + y2
-        if num_lines != 0:		
-            cv2.line(image, (int(x1_sum/num_lines), int(y1_sum/num_lines)), (int(x2_sum/num_lines), int(y2_sum/num_lines)), (255, 0, 0), 2)
+                    x1Sum = x1Sum + x1
+                    x2Sum = x2Sum + x2
+                    y1Sum = y1Sum + y1
+                    y2Sum = y2Sum + y2
+        if numLines != 0:		
+            cv2.line(image, (int(x1Sum/numLines), int(y1Sum/numLines)), (int(x2Sum/numLines), int(y2Sum/numLines)), (255, 0, 0), 2)
 
         # Converting it back to video
         # Uncomment this line to write to video
-        # video.write(image)
+        video.write(image)
 
         # Saves the frames with frame-count 
-        cv2.imwrite("Images/final/frame%d.jpg" % count, image) 
+        #cv2.imwrite("Images/final/frame%d.jpg" % count, image) 
         count += 1
-        # print(temp)
+
         # Limiting the number of frames 
-        if count == 50:
+        if count == 300:
             break
     video.release()
   
