@@ -9,14 +9,6 @@ def FrameCapture(path):
   
     # Used as counter variable 
     count = 0
-  
-    # checks whether frames were extracted 
-    success, image = vidObj.read() 
-
-    # Video writer
-    height, width, layers = image.shape
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = cv2.VideoWriter('output.mp4', fourcc, 15, (width, height))
 
     # background subtractor
     backgroundSubtractor = cv2.createBackgroundSubtractorMOG2()
@@ -34,10 +26,16 @@ def FrameCapture(path):
 
         successLearn, imageLearn = vidObjLearn.read()
         foregroundLearn = backgroundSubtractor.apply(imageLearn, learningRate = 0.01)
-
-        if countLearn == 50:
-            break
 	
+    # checks whether frames were extracted 
+    success, image = vidObj.read() 
+
+    # Video writer
+    # foreground = backgroundSubtractor.apply(image)
+    height, width, layers = image.shape
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video = cv2.VideoWriter('output.mp4', fourcc, 30, (width, height))
+
     # Processing the image
     while success: 
   
@@ -46,11 +44,20 @@ def FrameCapture(path):
         success, image = vidObj.read() 
         
         # foreground
-        foreground = backgroundSubtractor.apply(image, learningRate = 0.01)
+        foreground = backgroundSubtractor.apply(image)
+        if foreground is None:
+            break
+        
+        # Displaying the part in focus
+        # cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+        # cv2.resizeWindow('image', 300, 300)
+        # cv2.imshow('image', foreground)
+        # if cv2.waitKey(30) & 0xFF == ord('q'):
+        #     break
 
         # Processing the image of clean it
         cleanedImage = cv2.morphologyEx(foreground, cv2.MORPH_OPEN, kernel)
-
+        
         # Canny image detector
         # Modify lower and upper threshold for better edges
         cannyImage = cv2.Canny(cleanedImage, 10, 90, apertureSize = 3)
@@ -93,14 +100,10 @@ def FrameCapture(path):
         # Uncomment this line to write to video
         video.write(image)
 
-        # Saves the frames with frame-count 
-        #cv2.imwrite("Images/final/frame%d.jpg" % count, image) 
-        count += 1
-
-        # Limiting the number of frames 
-        if count == 300:
-            break
     video.release()
+    vidObj.release()
+    vidObjLearn.release()
+    cv2.destroyAllWindows()
   
 # Driver Code 
 if __name__ == '__main__': 
