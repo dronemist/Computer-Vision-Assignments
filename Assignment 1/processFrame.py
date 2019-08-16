@@ -63,7 +63,7 @@ def FrameCapture(path):
         cannyImage = cv2.Canny(cleanedImage, 10, 90, apertureSize = 3)
         
         # Hough lines 
-        lines = cv2.HoughLines(cannyImage, 1, np.pi/180, 150)
+        lines = cv2.HoughLines(cannyImage, 1, np.pi/180, 120)
         temp = 0
 
         # Taking the average of the lines
