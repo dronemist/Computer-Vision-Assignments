@@ -40,6 +40,9 @@ def FrameCapture(path):
     # Processing the image
     while success: 
         numLines = 0
+        angleSum = 0
+        midPointX = 0
+        midPointY = 0
         x1Min = np.inf
         x2Max = -np.inf
         y1Min = np.inf
@@ -124,8 +127,12 @@ def FrameCapture(path):
                     y1Min = min(y1Min, y1)
                     x2Max = max(x2Max, x2)
                     y2Max = max(y2Max, y2)
-
+                    if x2-x1 == 0:
+                        angleSum = angleSum + np.arctan(np.inf)
+                    else:
+                        angleSum = angleSum + np.arctan((y2-y1)/(x2-x1))
                     numLines = numLines + 1
+
                     # cv2.line(image, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
 
@@ -135,9 +142,35 @@ def FrameCapture(path):
         # print (lines)
         # print(np.shape(lines))
         # print(numLines)
+        midPointX = ((x1Min + x2Max) / 2)
+        midPointY = ((y1Min + y2Max) / 2)
         if numLines != 0:
             # print(numLines)
-            cv2.line(image, (x1Min, y1Min), (x2Max, y2Max), (255, 0, 0), 2)
+            angleAvg = angleSum/numLines
+            if x1-midPointX == 0:
+                anglePoint1 = np.pi/2
+            else:
+                anglePoint1 = np.arctan((y1-midPointY)/(x1-midPointX))
+            if x2-midPointX == 0:
+                anglePoint2 = np.pi/2
+            else:
+                anglePoint2 = np.arctan((y2 - midPointY) / (x2 - midPointX))
+            relativePoint1X = x1 - midPointX
+            relativePoint1Y = y1 - midPointY
+            relativePoint2X = x2 - midPointX
+            relativePoint2Y = y2 - midPointY
+            relativeAnglePoint1 = anglePoint1 - angleAvg
+            relativeAnglePoint2 = anglePoint2 - angleAvg
+            projectedX1 =  int(midPointX + (relativePoint1X)*(np.cos(relativeAnglePoint1))*(np.cos(angleAvg))/(np.cos(anglePoint1)))
+            projectedX2 = int(midPointX + (relativePoint2X) * (np.cos(relativeAnglePoint2)) * (np.cos(angleAvg)) / (
+                np.cos(anglePoint2)))
+            projectedY1 = int(midPointY + (relativePoint1X) * (np.cos(relativeAnglePoint1)) * (np.sin(angleAvg)) / (
+                np.cos(anglePoint1)))
+            projectedY2 = int(midPointY + (relativePoint2X) * (np.cos(relativeAnglePoint2)) * (np.sin(angleAvg)) / (
+                np.cos(anglePoint2)))
+
+            cv2.line(image, (projectedX1, projectedY1), (projectedX2, projectedY2), (255, 0, 0), 2)
+        # cv2.line(image, (int(x1Min), int(y1Min)), (int(x2Max), int(y2Max)), (255, 0, 0), 2)
             # print((int(x1Sum/numLines), y1Min), (int(x2Sum/numLines), y2Max))
             # cv2.line(image, (int(x1Sum/numLines), y1Min), (int(x2Sum/numLines), y2Max), (255, 0, 0), 2)
         # # Converting it back to video
