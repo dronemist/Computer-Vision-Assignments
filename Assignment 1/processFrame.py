@@ -1,6 +1,47 @@
 # Program to extract frames
 import cv2
 import numpy as np
+
+# Function to identify end points
+def EndPoints(cannyImage, rho, theta):
+    # rho, theta = line
+    a = np.cos(theta)
+    b = np.sin(theta)
+
+    # Number of points to be checked
+    limit = 50
+
+    # Minimum number of votes
+    threshold = 30
+
+    # Maximum possible length
+    maxLength = 100
+
+    # Number of times loop is run
+    frequency = 10
+    # Main loop
+    cnt = limit
+    cnt2 = 0
+    currentR = maxLength
+    previousR = 0
+    while frequency != 0:
+        while cnt != 0:
+            x1 = int(a * rho - currentR * (-b))
+            y1 = int(b * rho - currentR * (a))
+            if cannyImage[x1][y1] != 0:
+                cnt2 += 1
+            if cnt2 > threshold:
+                temp = previousR
+                previousR = currentR
+                currentR = int(temp + previousR)/2
+                break
+            cnt -= 1
+            currentR += 1
+        cnt = limit
+        cnt2 = 0  
+        frequency -= 1
+    return currentR    
+
 # Function to extract frames 
 def FrameCapture(path): 
       
@@ -13,19 +54,22 @@ def FrameCapture(path):
     # background subtractor
     backgroundSubtractor = cv2.createBackgroundSubtractorMOG2()
 
+    # background subtractor MOG
+    bs2 = cv2.bgsegm.createBackgroundSubtractorMOG()
     # cleaning image kernel
+
     kernel = np.ones((3,3), np.uint8)
 
     # making the background subtractor learn
-    vidObjLearn = cv2.VideoCapture(path)
-    countLearn = 0	
-    successLearn, imageLearn = vidObjLearn.read()
-    while successLearn:
+    # vidObjLearn = cv2.VideoCapture(path)
+    # countLearn = 0	
+    # successLearn, imageLearn = vidObjLearn.read()
+    # while successLearn:
 
-        countLearn += 1
+    #     countLearn += 1
 
-        successLearn, imageLearn = vidObjLearn.read()
-        foregroundLearn = backgroundSubtractor.apply(imageLearn, learningRate = 0.01)
+    #     successLearn, imageLearn = vidObjLearn.read()
+    #     foregroundLearn = backgroundSubtractor.apply(imageLearn, learningRate = 0.01)
 	
     # checks whether frames were extracted 
     success, image = vidObj.read() 
@@ -44,7 +88,7 @@ def FrameCapture(path):
         success, image = vidObj.read() 
         
         # foreground
-        foreground = backgroundSubtractor.apply(image)
+        foreground = bs2.apply(image)
         if foreground is None:
             break
         
@@ -66,6 +110,8 @@ def FrameCapture(path):
         lines = cv2.HoughLines(cannyImage, 1, np.pi/180, 120)
         temp = 0
 
+        # r = EndPoints(cannyImage, lines[0])
+        
         # Taking the average of the lines
         if np.shape(lines) == ():
             numLines = 0
@@ -77,11 +123,13 @@ def FrameCapture(path):
         y2Sum = 0		
         if lines is not None:
             # Applying hough transform
-            r = 875
+            # r = 875
             for line in lines:
                 for rho, theta in line:
                     a = np.cos(theta)
                     b = np.sin(theta)
+                    r = EndPoints(cannyImage, rho, theta)
+                    print(r)
                     x0 = a*rho
                     y0 = b*rho
                     x1 = int(x0 + r*(-b))
@@ -98,7 +146,7 @@ def FrameCapture(path):
 
         # Converting it back to video
         # Uncomment this line to write to video
-        video.write(image)
+        # video.write(image)
 
     video.release()
     vidObj.release()
