@@ -14,7 +14,7 @@ def getMidPointAndLength(cannyImage):
     x2Max = -1e6
     y1Min = 1e6
     y2Max = -1e6
-    minLineLength = 25
+    minLineLength = 50
     maxLineGap = 10
     lines = cv2.HoughLinesP(cannyImage, 1, np.pi / 180, 100, minLineLength, maxLineGap)
     x1Sum = 0
@@ -67,7 +67,7 @@ def drawLines(cannyImage, image, midPointX, midPointY, lineLength):
     normalHoughLines = cv2.HoughLines(cannyImage, 1, np.pi / 180, 150)
     if normalHoughLines is not None:
         # Applying hough transform
-        r = lineLength / 2
+        r = lineLength / 2 + 50
         for line in normalHoughLines:
             for rho, theta in line:
                 a = np.cos(theta)
