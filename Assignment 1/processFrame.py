@@ -14,9 +14,9 @@ def getMidPointAndLength(cannyImage):
     x2Max = -1e6
     y1Min = 1e6
     y2Max = -1e6
-    minLineLength = 50
+    minLineLength = 25
     maxLineGap = 10
-    lines = cv2.HoughLinesP(cannyImage, 1, np.pi / 180, 100, minLineLength, maxLineGap)
+    lines = cv2.HoughLinesP(cannyImage, 1, np.pi / 180, 75)
     x1Sum = 0
     y1Sum = 0
     x2Sum = 0
@@ -67,7 +67,7 @@ def drawLines(cannyImage, image, midPointX, midPointY, lineLength):
     normalHoughLines = cv2.HoughLines(cannyImage, 1, np.pi / 180, 150)
     if normalHoughLines is not None:
         # Applying hough transform
-        r = lineLength / 2 + 50
+        r = lineLength / 2
         for line in normalHoughLines:
             for rho, theta in line:
                 a = np.cos(theta)
@@ -112,7 +112,7 @@ def FrameCapture(path):
     # Video writer
     height, width, layers = image.shape
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    video = cv2.VideoWriter("output" + path[7] + ".mp4", fourcc, 30, (width, height))
+    video = cv2.VideoWriter("Output/output" + path[7] + ".mp4", fourcc, 30, (width, height))
 
     # Processing the image
     while success: 
@@ -143,12 +143,12 @@ def FrameCapture(path):
         #     break
 
         # Displaying the part in focus
-        cv2.namedWindow('image', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('image', 600, 600)
-        cv2.imshow('image', image)
-        if cv2.waitKey(30) & 0xFF == ord('q'):
-            break
-        # video.write(image)
+        # cv2.namedWindow('image', cv2.WINDOW_NORMAL)
+        # cv2.resizeWindow('image', 600, 600)
+        # cv2.imshow('image', foreground)
+        # if cv2.waitKey(30) & 0xFF == ord('q'):
+        #     break
+        video.write(image)
 
     video.release()
     vidObj.release()
@@ -158,4 +158,6 @@ def FrameCapture(path):
 if __name__ == '__main__': 
   
     # Calling the function 
+    # for i in range(1, 11):
     FrameCapture("Videos/1.mp4")
+        # print(i)
