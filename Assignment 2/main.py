@@ -2,8 +2,7 @@ import numpy as np
 import cv2 as cv
 import os
 import matplotlib.pyplot as plt
-
-# TODO: calculate feature points once to avoid recalculation each time
+database = []
 def imageMatcher(path, img):
   """
   Matches all the images in path folder and returns the most similar image 
@@ -12,19 +11,14 @@ def imageMatcher(path, img):
   img = cv.imread('1/2.jpg', cv.IMREAD_GRAYSCALE)
   maxSimilarity = 0
   similarImage = '2.jpg'
-
-  # feature detector
-  featureDetector = cv.KAZE_create()
-
   # Keypoints and descriptor of main image
-  keyPoints1, d1  = featureDetector.detectAndCompute(img, None)
+  keyPoints1, d1  = database[int(similarImage[0]) - 1]
   for fileName in os.listdir(path):
-
     # Filename shouldn't be name of this image
     if fileName != '2.jpg':
       print(fileName)
       imgToCompare = cv.imread(path + fileName, cv.IMREAD_GRAYSCALE)
-      keyPoints2, d2  = featureDetector.detectAndCompute(imgToCompare, None)
+      keyPoints2, d2  = database[int(fileName[0]) - 1]
       print(len(keyPoints1))
       print(len(keyPoints2))
       index_params = dict(algorithm = 1, trees = 5)
@@ -53,7 +47,23 @@ def imageMatcher(path, img):
   #                   matchesMask = matchesMask,
   #                   flags = cv.DrawMatchesFlags_DEFAULT)      
   # similarImage = cv.drawMatchesKnn(img,keyPoints1,imgToCompare,keyPoints2,matches,None,**draw_params)
-  # plt.imshow(similarImage),plt.show()      
+  # plt.imshow(similarImage),plt.show()   
+  
+def calculateDatatbase(path):
+  global database
+  database = [(None, None)] * len(os.listdir(path))
+  # Number of features 
+  numberOfFeatures = 5000
+  # feature detector
+  featureDetector = cv.ORB_create(nfeatures = numberOfFeatures)
+  for fileName in os.listdir(path):
+    # Reading image
+    img = cv.imread(path + fileName, cv.IMREAD_GRAYSCALE)
+    keyPoints, d  = featureDetector.detectAndCompute(img, None)
+    database[int(fileName[0]) - 1] = (keyPoints, d)
+
 if __name__ == '__main__':
+  path = '1/'
+  calculateDatatbase(path)
   img = cv.imread('1/2.jpg', cv.IMREAD_GRAYSCALE)
   imageMatcher('1/', img)
