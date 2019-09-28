@@ -23,17 +23,6 @@ def trimImage(image):
     while np.sum(image[:, -1]) == 0:
       image = image[:, :-2]
 
-    # if not np.sum(image[0]):
-    #     return trimImage(image[1:])
-    #crop bottom
-    # if not np.sum(image[-1]):
-    #     return trimImage(image[:-2])
-    #crop top
-    # if not np.sum(image[:,0]):
-    #     return trimImage(image[:,1:])
-    # #crop top
-    # if not np.sum(image[:,-1]):
-    #     return trimImage(image[:,:-2])
     return image
 
 def warpTwoImages(img1, img2, H):
@@ -67,6 +56,7 @@ def imageMatcher(path, img, imgName, imagesFromWhichToSelect):
   similarImageName = '2.jpg'
   # Keypoints and descriptor of main image
   keyPoints1, d1  = database[imgName]
+  best_good_points = []
   for fileName in imagesFromWhichToSelect:
     # Filename shouldn't be name of this image
 
@@ -95,7 +85,8 @@ def imageMatcher(path, img, imgName, imagesFromWhichToSelect):
     if(len(good_points) > maxSimilarity):
       maxSimilarity = len(good_points)
       similarImageName = fileName
-  # print(similarImage)
+      best_good_points = list(good_points)
+  print(similarImageName)
   similarImage = cv.imread(path + similarImageName, cv.IMREAD_GRAYSCALE)
   # draw_params = dict(matchColor = (0,255,0),
   #                   singlePointColor = (255,0,0),
@@ -104,16 +95,16 @@ def imageMatcher(path, img, imgName, imagesFromWhichToSelect):
   # matchingImage = cv.drawMatchesKnn(img,keyPoints1,similarImage,keyPoints2,matches,None,**draw_params)
   # plt.imshow(matchingImage),plt.show()
   # Estimating Homography
-  obj = np.empty((len(good_points), 2), dtype=np.float32)
-  scene = np.empty((len(good_points), 2), dtype=np.float32)
+  obj = np.empty((len(best_good_points), 2), dtype=np.float32)
+  scene = np.empty((len(best_good_points), 2), dtype=np.float32)
 
   keyPoints2 = (database[similarImageName])[0]
-  for i in range(len(good_points)):
+  for i in range(len(best_good_points)):
     # -- Get the keypoints from the good matches
-    obj[i, 0] = keyPoints1[good_points[i].queryIdx].pt[0]
-    obj[i, 1] = keyPoints1[good_points[i].queryIdx].pt[1]
-    scene[i, 0] = keyPoints2[good_points[i].trainIdx].pt[0]
-    scene[i, 1] = keyPoints2[good_points[i].trainIdx].pt[1]
+    obj[i, 0] = keyPoints1[best_good_points[i].queryIdx].pt[0]
+    obj[i, 1] = keyPoints1[best_good_points[i].queryIdx].pt[1]
+    scene[i, 0] = keyPoints2[best_good_points[i].trainIdx].pt[0]
+    scene[i, 1] = keyPoints2[best_good_points[i].trainIdx].pt[1]
 
   reprojThresh = 4.0
   (Homography, status) = cv.findHomography(obj, scene, cv.RANSAC, reprojThresh)
@@ -177,9 +168,9 @@ if __name__ == '__main__':
       print("No")
 
     result = warpTwoImages(similarImage, baseImg, Homography)
-      # cv.warpPerspective(baseImg, Homography,
-      #                            (baseImg.shape[1] + similarImage.shape[1], baseImg.shape[0]))
-    # result[0:similarImage.shape[0], 0:similarImage.shape[1]] = similarImage
+    # result = cv.warpPerspective(baseImg, Homography,
+    #                              (baseImg.shape[1] + similarImage.shape[1], baseImg.shape[0]))
+    result[0:similarImage.shape[0], 0:similarImage.shape[1]] = similarImage
 
     result = trimImage(result)
     baseImg = cv.resize(result, (similarImage.shape[1], similarImage.shape[0]))
