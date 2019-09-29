@@ -113,12 +113,12 @@ def imageMatcher(path, img, imgName, imagesFromWhichToSelect):
     scene[i, 0] = keyPoints2[best_good_points[i].trainIdx].pt[0]
     scene[i, 1] = keyPoints2[best_good_points[i].trainIdx].pt[1]
 
-  draw_params = dict(matchColor = (0,255,0),
-                   singlePointColor = (255,0,0),
-                   matchesMask = matchesMask,
-                   flags = cv.DrawMatchesFlags_DEFAULT)
-  matchingImage = cv.drawMatchesKnn(similarImage,keyPoints2,img,keyPoints1,matches,None,**draw_params)
-  plt.imshow(matchingImage),plt.show()
+  # draw_params = dict(matchColor = (0,255,0),
+  #                  singlePointColor = (255,0,0),
+  #                  matchesMask = matchesMask,
+  #                  flags = cv.DrawMatchesFlags_DEFAULT)
+  # matchingImage = cv.drawMatchesKnn(similarImage,keyPoints2,img,keyPoints1,matches,None,**draw_params)
+  # plt.imshow(matchingImage),plt.show()
 
   reprojThresh = 4.0
   (Homography, status) = cv.findHomography(scene, obj, cv.RANSAC, reprojThresh)
@@ -148,6 +148,7 @@ if __name__ == '__main__':
   path = '1/'
   calculateDatabase(path)
   fileNameList = os.listdir(path)
+  fileNameList = sorted(fileNameList)
   baseFileName = fileNameList[0]
   imagesRemainingToBeStitched = list(fileNameList[1:])
   #Will keep modifying this baseImage by stitching images to it one by one
@@ -157,33 +158,28 @@ if __name__ == '__main__':
 
   while not(len(imagesRemainingToBeStitched) == 0): #Till no remaining images
     (Homography, status, similarImageName) = imageMatcher(path, baseImg, baseImgName, imagesRemainingToBeStitched)
-    #Removing the similar image from imagesRemainingToBeStitched
+    # Removing the similar image from imagesRemainingToBeStitched
     print(similarImageName)
     print(Homography)
     len_temp = len(imagesRemainingToBeStitched)
     imagesRemainingToBeStitched = list(image for image in imagesRemainingToBeStitched if not(image == similarImageName))
-
     if(len(imagesRemainingToBeStitched) == len_temp):
       break
-
     similarImage = readEqualisedImage(path + similarImageName)
     if baseImg is None:
       print("Yes")
     else:
       print("No")
 
-
     result = warpTwoImages(baseImg, similarImage, Homography)
     # result = cv.warpPerspective(similarImage, Homography, (similarImage.shape[1] + baseImg.shape[1], similarImage.shape[0]))
     # result[0:baseImg.shape[0], 0:baseImg.shape[1]] = baseImg
-	
     result = trimImage(result)
     baseImg = result
     # baseImg = cv.resize(result, (similarImage.shape[1], similarImage.shape[0]))
     baseImg1 = cv.resize(result, (416, 234))
-
-
-    updateDatabase(baseImg, baseImgName)
+    if(len(imagesRemainingToBeStitched) != 0):
+      updateDatabase(baseImg, baseImgName)
     cv.imshow("Result", baseImg1)
     cv.waitKey(0)
     print(baseImg.shape)
