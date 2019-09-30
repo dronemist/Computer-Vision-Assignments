@@ -11,9 +11,12 @@ featureDetector = cv.xfeatures2d.SIFT_create()
 
 def selectBaseImage(fileNameList, path):
   votingTable = {}
+  normTable = {}
+  normTable[""] = np.inf
   answer = ""
   for file in fileNameList:
     votingTable[file] = 0
+    normTable[file] = 0
   for file in fileNameList:
     tempList = fileNameList  
     currentHomographyTable = [] 
@@ -26,6 +29,7 @@ def selectBaseImage(fileNameList, path):
       currentHomographyTable.append((similarImageName, Homography))
       tempList = list(image for image in tempList if not(image == similarImageName))
     average = sum / len(fileNameList)
+    print(average)
     minImageName = currentImageName
     minNorm = np.inf
     for (similarImageName, Homography) in currentHomographyTable:
@@ -34,11 +38,18 @@ def selectBaseImage(fileNameList, path):
         minImageName = similarImageName
         minNorm = currentNorm
     votingTable[minImageName] += 1
+    normTable[minImageName] += minNorm 
+    print(file, minNorm, minImageName)
   maxVotes = 0  
   for file in fileNameList:
     if votingTable[file] > maxVotes:
       answer = file
       maxVotes = votingTable[file]
+	
+    if votingTable[file] == maxVotes:
+      if normTable[file] < normTable[answer]:
+        answer = file
+	
   return answer
 
 def readEqualisedImage(path):
@@ -241,7 +252,7 @@ def imageMatcher(path, imgName, imagesFromWhichToSelect):
   
   # Homography, status = cv.estimateAffine2D(scene, obj)
   # Homography = np.concatenate((Homography, np.array([[0, 0, 1]])))
-  if(Homography == None):
+  if(Homography.all() == None):
     print("Please input more similiar images, exiting now.......")
     exit(0)
   return (Homography, status, similarImageName)
