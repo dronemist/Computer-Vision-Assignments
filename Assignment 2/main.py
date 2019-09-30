@@ -143,7 +143,7 @@ def blend(result, startX, startY, endX, endY, img):
           result[row, column] = img[row - startY, column - startX]
   return result                             
 
-def warpTwoImages(img1, img2, H):
+def warpTwoImages(img1, img2, H, ratio):
     '''warp img2 to img1 with homograph H'''
     h1,w1 = img1.shape[:2]
     h2,w2 = img2.shape[:2]
@@ -151,7 +151,6 @@ def warpTwoImages(img1, img2, H):
     pts1 = np.float32([[0,0],[0,h1],[w1,h1],[w1,0]]).reshape(-1,1,2)
     pts2 = np.float32([[0,0],[0,h2],[w2,h2],[w2,0]]).reshape(-1,1,2)
     identity = np.array([[1,0,0],[0,1,0],[0,0,1]])
-    ratio = 0.7
     pts2_ = cv.perspectiveTransform(pts2,(H * ratio + identity * (1 - ratio)))
     pts = np.concatenate((pts1, pts2_), axis=0)
     [xmin, ymin] = np.int32(pts.min(axis=0).ravel() - 0.5)
@@ -165,8 +164,9 @@ def warpTwoImages(img1, img2, H):
     startY = t[1]
     endX = w1+t[0]
     endY = h1+t[1]
+    
     result = blend(result, startX, startY, endX, endY, img1)
-
+    # print(result.shape)
 
     # result[t[1]:h1+t[1],t[0]:w1+t[0]] = img1
     # alpha = 0.5
@@ -260,11 +260,12 @@ def calculateDatabase(path):
 if __name__ == '__main__':
   #TODO: Resize images
   path = sys.argv[1]
+  ratio = float(sys.argv[2])
   calculateDatabase(path)
   fileNameList = os.listdir(path)
   fileNameList = sorted(fileNameList)
-  # baseFileName = selectBaseImage(fileNameList, path)
-  baseFileName = '2.jpg'
+  baseFileName = selectBaseImage(fileNameList, path)
+  # baseFileName = '2.jpg'
   print(baseFileName)
   imagesRemainingToBeStitched = list(image for image in fileNameList if not(image == baseFileName))
   # Will keep modifying this baseImage by stitching images to it one by one
@@ -287,7 +288,7 @@ if __name__ == '__main__':
     else:
       print("No")
 
-    result = warpTwoImages(baseImg, similarImage, Homography)
+    result = warpTwoImages(baseImg, similarImage, Homography, ratio)
     # result = cv.warpPerspective(similarImage, Homography, (similarImage.shape[1] + baseImg.shape[1], similarImage.shape[0]))
     # result[0:baseImg.shape[0], 0:baseImg.shape[1]] = baseImg
     # result = trimImage(result)
