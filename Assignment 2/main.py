@@ -77,7 +77,9 @@ def warpTwoImages(img1, img2, H):
     print((h2, w2))
     pts1 = np.float32([[0,0],[0,h1],[w1,h1],[w1,0]]).reshape(-1,1,2)
     pts2 = np.float32([[0,0],[0,h2],[w2,h2],[w2,0]]).reshape(-1,1,2)
-    pts2_ = cv.perspectiveTransform(pts2, H)
+    identity = np.array([[1,0,0],[0,1,0],[0,0,1]])
+    ratio = 0.8
+    pts2_ = cv.perspectiveTransform(pts2,(H * ratio + identity * (1 - ratio)))
     pts = np.concatenate((pts1, pts2_), axis=0)
     [xmin, ymin] = np.int32(pts.min(axis=0).ravel() - 0.5)
     [xmax, ymax] = np.int32(pts.max(axis=0).ravel() + 0.5)
@@ -177,14 +179,14 @@ def calculateDatabase(path):
 
 if __name__ == '__main__':
   #TODO: Resize images
-  path = '1/'
+  path = '4/'
   calculateDatabase(path)
   fileNameList = os.listdir(path)
   fileNameList = sorted(fileNameList)
   baseFileName = selectBaseImage(fileNameList, path)
   print(baseFileName)
   imagesRemainingToBeStitched = list(image for image in fileNameList if not(image == baseFileName))
-  #Will keep modifying this baseImage by stitching images to it one by one
+  # Will keep modifying this baseImage by stitching images to it one by one
   baseImg = readEqualisedImage(path + baseFileName)
   baseImgName = "Base"
   updateDatabase(baseImg, baseImgName)
@@ -210,7 +212,7 @@ if __name__ == '__main__':
     result = trimImage(result)
     baseImg = result
     # baseImg = cv.resize(result, (similarImage.shape[1], similarImage.shape[0]))
-    baseImg1 = cv.resize(result, (416, 234))
+    baseImg1 = cv.resize(result, (int(baseImg.shape[1] / 5), int(baseImg.shape[0] / 5)))
     if(len(imagesRemainingToBeStitched) != 0):
       updateDatabase(baseImg, baseImgName)
     cv.imshow("Result", baseImg1)
@@ -218,5 +220,5 @@ if __name__ == '__main__':
     print(baseImg.shape)
     print(similarImage.shape)
 
-  baseImg = cv.resize(baseImg, (416, 234))
+  baseImg = cv.resize(baseImg, (int(baseImg.shape[1] / 5), int(baseImg.shape[0] / 5)))
   cv.imwrite("Result.jpg", baseImg)
