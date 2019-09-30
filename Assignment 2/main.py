@@ -249,7 +249,7 @@ def imageMatcher(path, imgName, imagesFromWhichToSelect):
 
   reprojThresh = 4.0
   (Homography, status) = cv.findHomography(scene, obj, cv.RANSAC, reprojThresh)
-  
+  # Homography = Homography.astype(np.float32)
   # Homography, status = cv.estimateAffine2D(scene, obj)
   # Homography = np.concatenate((Homography, np.array([[0, 0, 1]])))
   if(Homography.all() == None):
@@ -278,7 +278,11 @@ def calculateDatabase(path):
 if __name__ == '__main__':
   #TODO: Resize images
   path = sys.argv[1]
-  ratio = float(sys.argv[2])
+  ratio = 0.7
+  try:
+    ratio = float(sys.argv[2])
+  except:
+    ratio = 0.7
   calculateDatabase(path)
   fileNameList = os.listdir(path)
   fileNameList = sorted(fileNameList)
