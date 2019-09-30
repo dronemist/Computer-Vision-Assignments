@@ -1,5 +1,6 @@
 import numpy as np
 import cv2 as cv
+import sys
 import matplotlib.pyplot as plt
 import os
 #Databse of image names with their keypoints and descriptors
@@ -70,6 +71,78 @@ def trimImage(image):
 
     return image
 
+def blend(result, startX, startY, endX, endY, img):
+  weights = (np.ones((endY + 2, endX + 2, 2))) * np.inf
+  resultIsLeft = False
+  # 1 is new image and 0 is result image
+  # distance from left border
+  for row in range(startY, endY):
+    minCol = np.inf
+    for column in range(startX, endX):
+      if result[row, column].any() != 0:
+        if(minCol == np.inf):
+          minCol = column  
+        if minCol == startX:
+          weights[row, column, 1] = (column - minCol)
+        else:
+          weights[row, column, 0] = (column - minCol) 
+
+  # distance from right border
+  for row in range(startY, endY):
+    maxCol = 0
+    for column in reversed(range(startX, endX)):
+      if result[row, column].any() != 0:
+        if(maxCol == 0):
+          maxCol = column
+        if(maxCol == endX - 1):  
+          weights[row, column, 1] = min(weights[row, column, 1], (maxCol - column))
+        else:
+          weights[row, column, 0] = min(weights[row, column, 0], (maxCol - column))  
+
+  # distance from top border
+  for column in range(startX, endX):
+    minRow = np.inf
+    for row in range(startY, endY):
+      if result[row, column].any() != 0:
+        if minRow == np.inf:
+          minRow = row  
+        if minRow == startY:
+          weights[row, column, 1] = min(weights[row, column, 1], row - minRow)
+        else:
+          weights[row, column, 0] = min(weights[row, column, 0], row - minRow)
+
+  # distance from bottom border
+  for column in range(startX, endX):
+    maxRow = 0
+    for row in reversed(range(startY, endY)):
+      if result[row, column].any() != 0:
+        if maxRow == 0:
+          maxRow = row 
+        if maxRow == endY - 1:
+          weights[row, column, 1] = min(weights[row, column, 1], maxRow - row)
+        else:
+          weights[row, column, 0] = min(weights[row, column, 0], maxRow - row)
+
+  for row in range(startY, endY):
+      for column in range(startX, endX):
+        if result[row, column].any() != 0:
+          # weight1 = 0.5
+          weight1 = weights[row, column, 0]
+          pixel1 = result[row, column]
+          # weight2 = 0.5
+          weight2 = weights[row, column, 1]
+          pixel2 = img[row - startY, column - startX]
+          sum = weight1 + weight2
+          weight1 = (weight1)/ (sum)
+          weight2 = (weight2)/ (sum)
+          normalisedValue = cv.addWeighted(pixel1, weight1, pixel2, weight2, 0)
+          result[row, column][0] = normalisedValue[0][0]
+          result[row, column][1] = normalisedValue[1][0]
+          result[row, column][2] = normalisedValue[2][0]
+        else:
+          result[row, column] = img[row - startY, column - startX]
+  return result                             
+
 def warpTwoImages(img1, img2, H):
     '''warp img2 to img1 with homograph H'''
     h1,w1 = img1.shape[:2]
@@ -78,7 +151,7 @@ def warpTwoImages(img1, img2, H):
     pts1 = np.float32([[0,0],[0,h1],[w1,h1],[w1,0]]).reshape(-1,1,2)
     pts2 = np.float32([[0,0],[0,h2],[w2,h2],[w2,0]]).reshape(-1,1,2)
     identity = np.array([[1,0,0],[0,1,0],[0,0,1]])
-    ratio = 0.8
+    ratio = 0.7
     pts2_ = cv.perspectiveTransform(pts2,(H * ratio + identity * (1 - ratio)))
     pts = np.concatenate((pts1, pts2_), axis=0)
     [xmin, ymin] = np.int32(pts.min(axis=0).ravel() - 0.5)
@@ -87,7 +160,15 @@ def warpTwoImages(img1, img2, H):
     Ht = np.array([[1,0,t[0]],[0,1,t[1]],[0,0,1]]) # translate
     print(pts2_)
     result = cv.warpPerspective(img2, Ht.dot(H), (xmax-xmin, ymax-ymin))
-    result[t[1]:h1+t[1],t[0]:w1+t[0]] = img1
+
+    startX = t[0]
+    startY = t[1]
+    endX = w1+t[0]
+    endY = h1+t[1]
+    result = blend(result, startX, startY, endX, endY, img1)
+
+
+    # result[t[1]:h1+t[1],t[0]:w1+t[0]] = img1
     # alpha = 0.5
     # beta = (1.0 - alpha)
     # result = cv.addWeighted(src1, alpha, src2, beta, 0.0)
@@ -156,7 +237,6 @@ def imageMatcher(path, imgName, imagesFromWhichToSelect):
 
   reprojThresh = 4.0
   (Homography, status) = cv.findHomography(scene, obj, cv.RANSAC, reprojThresh)
-
   return (Homography, status, similarImageName)
 
 def updateDatabase(image, imageName):
@@ -179,11 +259,12 @@ def calculateDatabase(path):
 
 if __name__ == '__main__':
   #TODO: Resize images
-  path = '4/'
+  path = sys.argv[1]
   calculateDatabase(path)
   fileNameList = os.listdir(path)
   fileNameList = sorted(fileNameList)
-  baseFileName = selectBaseImage(fileNameList, path)
+  # baseFileName = selectBaseImage(fileNameList, path)
+  baseFileName = '2.jpg'
   print(baseFileName)
   imagesRemainingToBeStitched = list(image for image in fileNameList if not(image == baseFileName))
   # Will keep modifying this baseImage by stitching images to it one by one
@@ -209,7 +290,7 @@ if __name__ == '__main__':
     result = warpTwoImages(baseImg, similarImage, Homography)
     # result = cv.warpPerspective(similarImage, Homography, (similarImage.shape[1] + baseImg.shape[1], similarImage.shape[0]))
     # result[0:baseImg.shape[0], 0:baseImg.shape[1]] = baseImg
-    result = trimImage(result)
+    # result = trimImage(result)
     baseImg = result
     # baseImg = cv.resize(result, (similarImage.shape[1], similarImage.shape[0]))
     baseImg1 = cv.resize(result, (int(baseImg.shape[1] / 5), int(baseImg.shape[0] / 5)))
