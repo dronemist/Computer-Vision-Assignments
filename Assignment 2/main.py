@@ -8,6 +8,38 @@ featureDetector = cv.xfeatures2d.SIFT_create()
 #Dictionary of image name and a bool to find whether image is already stitched or not
 # imagesAlreadyStitched = {}
 
+def selectBaseImage(fileNameList, path):
+  votingTable = {}
+  answer = ""
+  for file in fileNameList:
+    votingTable[file] = 0
+  for file in fileNameList:
+    tempList = fileNameList  
+    currentHomographyTable = [] 
+    currentImageName = file
+    # Calculating pairwise homography for current image
+    sum = np.zeros((3,3))  
+    while len(tempList) != 0:
+      (Homography, status, similarImageName) = imageMatcher(path, currentImageName, tempList)
+      sum += Homography
+      currentHomographyTable.append((similarImageName, Homography))
+      tempList = list(image for image in tempList if not(image == similarImageName))
+    average = sum / len(fileNameList)
+    minImageName = currentImageName
+    minNorm = np.inf
+    for (similarImageName, Homography) in currentHomographyTable:
+      currentNorm = np.linalg.norm(Homography - average, 2)
+      if(currentNorm < minNorm):
+        minImageName = similarImageName
+        minNorm = currentNorm
+    votingTable[minImageName] += 1
+  maxVotes = 0  
+  for file in fileNameList:
+    if votingTable[file] > maxVotes:
+      answer = file
+      maxVotes = votingTable[file]
+  return answer
+
 def readEqualisedImage(path):
   img = cv.imread(path)
   img_yuv = cv.cvtColor(img, cv.COLOR_BGR2YUV)
@@ -60,7 +92,7 @@ def warpTwoImages(img1, img2, H):
     return result
 
 
-def imageMatcher(path, img, imgName, imagesFromWhichToSelect):
+def imageMatcher(path, imgName, imagesFromWhichToSelect):
   """
   Matches all the images in path folder and returns the most similar image, also returns the homography with the best image
   name. 
@@ -99,7 +131,7 @@ def imageMatcher(path, img, imgName, imagesFromWhichToSelect):
       maxSimilarity = len(good_points)
       similarImageName = fileName
       best_good_points = list(good_points)
-  print(similarImageName)
+  # print(similarImageName)
   similarImage = readEqualisedImage(path + similarImageName)
   # Estimating Homography
   obj = np.empty((len(best_good_points), 2), dtype=np.float32)
@@ -149,15 +181,16 @@ if __name__ == '__main__':
   calculateDatabase(path)
   fileNameList = os.listdir(path)
   fileNameList = sorted(fileNameList)
-  baseFileName = fileNameList[0]
-  imagesRemainingToBeStitched = list(fileNameList[1:])
+  baseFileName = selectBaseImage(fileNameList, path)
+  print(baseFileName)
+  imagesRemainingToBeStitched = list(image for image in fileNameList if not(image == baseFileName))
   #Will keep modifying this baseImage by stitching images to it one by one
   baseImg = readEqualisedImage(path + baseFileName)
   baseImgName = "Base"
   updateDatabase(baseImg, baseImgName)
 
   while not(len(imagesRemainingToBeStitched) == 0): #Till no remaining images
-    (Homography, status, similarImageName) = imageMatcher(path, baseImg, baseImgName, imagesRemainingToBeStitched)
+    (Homography, status, similarImageName) = imageMatcher(path, baseImgName, imagesRemainingToBeStitched)
     # Removing the similar image from imagesRemainingToBeStitched
     print(similarImageName)
     print(Homography)
