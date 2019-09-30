@@ -159,6 +159,7 @@ def warpTwoImages(img1, img2, H, ratio):
     Ht = np.array([[1,0,t[0]],[0,1,t[1]],[0,0,1]]) # translate
     print(pts2_)
     result = cv.warpPerspective(img2, Ht.dot(H), (xmax-xmin, ymax-ymin))
+	
 
     startX = t[0]
     startY = t[1]
@@ -237,6 +238,10 @@ def imageMatcher(path, imgName, imagesFromWhichToSelect):
 
   reprojThresh = 4.0
   (Homography, status) = cv.findHomography(scene, obj, cv.RANSAC, reprojThresh)
+  
+  # Homography, status = cv.estimateAffine2D(scene, obj)
+  # Homography = np.concatenate((Homography, np.array([[0, 0, 1]])))
+  
   return (Homography, status, similarImageName)
 
 def updateDatabase(image, imageName):
@@ -291,7 +296,7 @@ if __name__ == '__main__':
     result = warpTwoImages(baseImg, similarImage, Homography, ratio)
     # result = cv.warpPerspective(similarImage, Homography, (similarImage.shape[1] + baseImg.shape[1], similarImage.shape[0]))
     # result[0:baseImg.shape[0], 0:baseImg.shape[1]] = baseImg
-    # result = trimImage(result)
+    result = trimImage(result)
     baseImg = result
     # baseImg = cv.resize(result, (similarImage.shape[1], similarImage.shape[0]))
     baseImg1 = cv.resize(result, (int(baseImg.shape[1] / 5), int(baseImg.shape[0] / 5)))
