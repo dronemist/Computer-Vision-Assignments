@@ -241,7 +241,9 @@ def imageMatcher(path, imgName, imagesFromWhichToSelect):
   
   # Homography, status = cv.estimateAffine2D(scene, obj)
   # Homography = np.concatenate((Homography, np.array([[0, 0, 1]])))
-  
+  if(Homography == None):
+    print("Please input more similiar images, exiting now.......")
+    exit(0)
   return (Homography, status, similarImageName)
 
 def updateDatabase(image, imageName):
