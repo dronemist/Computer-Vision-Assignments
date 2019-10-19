@@ -58,7 +58,7 @@ def calibration():
 
   # ? Current best is 0.1938  
   if(tot_error/len(objpoints) < 0.1938):  
-    np.savetxt("calibration.txt", mtx)
+    np.save("calibration", mtx)
   print("total error: " + str(tot_error/len(objpoints)))
   print(mtx)
   cap.release()  
