@@ -108,3 +108,6 @@ venv.bak/
 
 # ignoring images
 *.jpg
+
+# ignoring videos
+*.mp4
