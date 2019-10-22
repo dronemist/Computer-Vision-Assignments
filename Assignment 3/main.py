@@ -16,8 +16,15 @@ def featureMatching(fileName):
   bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)  
   # Compute model keypoints and its descriptors
   kp_model, des_model = orb.detectAndCompute(model, None)  
-  intrinsicMatrix = np.load("calibration.npy")
+  # intrinsicMatrix = np.load("calibration.npy")
+
+  intrinsicMatrix =  np.array([[872.5309487, 0.000000000000000000e+00, 418.59218933], 
+[0.000000000000000000e+00, 860.07596622, 244.32456827],
+[0.000000000000000000e+00, 0.000000000000000000e+00, 1.000000000000000000e+00]])
+
   cap = cv2.VideoCapture(0)
+
+  objectOffset = (0,0,0)
   while True:
     # read the current frame
     ret, frame = cap.read()
@@ -43,24 +50,36 @@ def featureMatching(fileName):
       reprojThresh = 4.0
       homography, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, reprojThresh)
       # draw matches.
-      frame = cv2.drawMatches(model, kp_model, frame, kp_frame,
-                            matches[:MIN_MATCHES], 0, flags=2)
+      # frame = cv2.drawMatches(model, kp_model, frame, kp_frame,
+      #                       matches[:MIN_MATCHES], 0, flags=2)
+
+      h, w = model.shape
+      pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+      # project corners into frame
+      dst = cv2.perspectiveTransform(pts, homography)
+      # connect them with lines  
+      frame = cv2.polylines(frame, [np.int32(dst)], True, 255, 3, cv2.LINE_AA) 
+      
       # if a valid homography matrix was found render cube on model plane
       if homography is not None:
         # obtain 3D projection matrix from homography matrix and camera parameters
         projection = projection_matrix(intrinsicMatrix, homography)  
         # project cube or model
-        frame = render(frame, obj, projection, model, False)                     
+        frame = render(frame, obj, projection, model, objectOffset, False)                     
       # show result
-      cv2.imshow('frame', frame)
-      cv2.waitKey(0)
+      # cv2.imshow('frame', frame)
+      # cv2.waitKey(0)
     else:
       print ("Not enough matches have been found - %d/%d" % (len(good_matches),
                                                             MIN_MATCHES))
+    if objectOffset[0] < 50:
+      objectOffset = (objectOffset[0], objectOffset[1] + 1, objectOffset[2])
+    else:
+      objectOffset = (0, 0, 0)
     # show result
-    # cv2.imshow('frame', frame)
-    # if cv2.waitKey(1) & 0xFF == ord('q'):
-    #     break 
+    cv2.imshow('frame', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break 
   cap.release()
   cv2.destroyAllWindows()
   return 0                                                        
@@ -94,13 +113,14 @@ def projection_matrix(camera_parameters, homography):
   print(projection)
   return np.dot(camera_parameters, projection)
 
-def render(img, obj, projection, model, color=False):
+def render(img, obj, projection, model, positionOffset = (0, 0, 0), color=False):
     """
     Render a loaded obj model into the current video frame
     """
     vertices = obj.vertices
     scale_matrix = np.eye(3) * 1
     h, w = model.shape
+    
 
     for face in obj.faces:
       face_vertices = face[0]
@@ -108,13 +128,16 @@ def render(img, obj, projection, model, color=False):
       points = np.dot(points, scale_matrix)
       # render model in the middle of the reference surface. To do so,
       # model points must be displaced
-      points = np.array([[p[0] + w / 2, p[1] + h / 2, p[2]] for p in points])
+      points = np.array([[p[0] + w / 2 + positionOffset[0], p[1] + h / 2 + positionOffset[1], p[2] + positionOffset[2]] for p in points])
+
+
       dst = cv2.perspectiveTransform(points.reshape(-1, 1, 3), projection)
       imgpts = np.int32(dst)
       if color is False:
           cv2.fillConvexPoly(img, imgpts, (137, 27, 211))
 
+
     return img
 
 if __name__ == "__main__":
-  featureMatching("marker01.png")
+  featureMatching("marker_photos/marker_2.jpg")
