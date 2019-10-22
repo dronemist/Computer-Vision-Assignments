@@ -4,20 +4,36 @@ import math
 import os
 from objloader_simple import *
 
-def featureMatching(fileName):
-  ''' Match the features of model to scene '''
+
+# ORB keypoint detector
+orb = cv2.ORB_create()              
+# create brute force matcher object
+bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)  
+
+
+def findKeyPoints(fileName):
+  global orb
+
   model = cv2.imread(fileName, 0)
   # object to be projected
-  obj = OBJ('fox.obj', swapyz=True)
+
   MIN_MATCHES = 10
-  # ORB keypoint detector
-  orb = cv2.ORB_create()              
-  # create brute force matcher object
-  bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)  
+
   # Compute model keypoints and its descriptors
   kp_model, des_model = orb.detectAndCompute(model, None)  
   # intrinsicMatrix = np.load("calibration.npy")
+  return (kp_model, des_model)
 
+def featureMatching(sourceMarkerFileName, destinationMarkerFileName):
+  ''' Match the features of model to scene '''
+
+
+  model = cv2.imread(sourceMarkerFileName, 0)
+  source_kp_model, source_des_model = findKeyPoints(sourceMarkerFileName)
+  # destination_kp_model, destination_des_model = findKeyPoints(destinationMarkerFileName)
+  MIN_MATCHES = 10
+
+  obj = OBJ('fox.obj', swapyz=True)
   intrinsicMatrix =  np.array([[872.5309487, 0.000000000000000000e+00, 418.59218933], 
 [0.000000000000000000e+00, 860.07596622, 244.32456827],
 [0.000000000000000000e+00, 0.000000000000000000e+00, 1.000000000000000000e+00]])
@@ -34,7 +50,7 @@ def featureMatching(fileName):
     # Compute scene keypoints and its descriptors
     kp_frame, des_frame = orb.detectAndCompute(frame, None)
     # Match frame descriptors with model descriptors
-    matches = bf.match(des_model, des_frame)
+    matches = bf.match(source_des_model, des_frame)
     matches = sorted(matches, key=lambda x: x.distance)
     # Sorting out good matches
     # TODO: Hardcoded, need a better measure
@@ -44,7 +60,7 @@ def featureMatching(fileName):
     
     if len(good_matches) > MIN_MATCHES:
       # differenciate between source points and destination points
-      src_pts = np.float32([kp_model[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+      src_pts = np.float32([source_kp_model[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
       dst_pts = np.float32([kp_frame[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
       # compute Homography
       reprojThresh = 4.0
@@ -140,4 +156,8 @@ def render(img, obj, projection, model, positionOffset = (0, 0, 0), color=False)
     return img
 
 if __name__ == "__main__":
-  featureMatching("marker_photos/marker_2.jpg")
+  
+  source_marker = "marker_photos/marker_2.jpg"
+  destination_marker = "marker_photos/marker_3.jpg"
+  
+  featureMatching(source_marker, destination_marker)
