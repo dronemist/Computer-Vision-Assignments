@@ -123,7 +123,8 @@ def featureMatching(sourceMarkerFileName, destinationMarkerFileName):
   objectOffset = (0,0,0)
   objectDistanceFromSource = 0.0
   objectSpeed = 0.5
-
+  # To stop the moving object when it reaches the destination
+  toUpdateOffset = True
   while True:
     
     #Initialising homography as None
@@ -168,7 +169,8 @@ def featureMatching(sourceMarkerFileName, destinationMarkerFileName):
         # Finding the midpoints for source and destination markers
         sourceMarkerMidPointArray = np.array( [ np.mean( dst[:, 0, 0] ), np.mean( dst[:, 0, 1] ) ] )
         destinationMarkerMidPointArray = findMarkerMidPointInFrame((kp_frame, des_frame), destinationMarkerModel.shape, destinationMarkerFileName)
-
+        print(sourceMarkerMidPointArray)
+        print(destinationMarkerMidPointArray)
 
         doesDirectionVectorExist = False
 
@@ -181,24 +183,31 @@ def featureMatching(sourceMarkerFileName, destinationMarkerFileName):
         objectDistancefromDestinationThreshold = 5.0
         
         if doesDirectionVectorExist:
-          # Updating the object distance from source
-          objectDistanceFromSource += objectSpeed
-          # Updating the object offset coordinates
-          object2DOffsetCoordinates = objectDistanceFromSource * unitDirectionVectorForObject
-          # Updating the object 2D coordinates
-          object2DCoordinates = sourceMarkerMidPointArray + object2DOffsetCoordinates
+          if toUpdateOffset:
+            # Updating the object distance from source
+            objectDistanceFromSource += objectSpeed
+            # Updating the object offset coordinates
+            object2DOffsetCoordinates = objectDistanceFromSource * unitDirectionVectorForObject
+            # Updating the object 2D coordinates
+            object2DCoordinates = sourceMarkerMidPointArray + object2DOffsetCoordinates
+            print(object2DCoordinates)
 
-          # Calculating object distance from destination
-          vector = (destinationMarkerMidPointArray - object2DCoordinates)
-          vectorNorm = np.linalg.norm(vector, ord=2)
-          objectDistancefromDestination = vectorNorm ** 2
+            # Calculating object distance from destination
+            vector = (destinationMarkerMidPointArray - object2DCoordinates)
+            vectorNorm = np.linalg.norm(vector, ord=2)
+            objectDistancefromDestination = vectorNorm
 
-          # If less than threshold, stop moving
-          if objectDistancefromDestination < objectDistancefromDestinationThreshold:
-            objectOffset = ( int(object2DOffsetCoordinates[0]), int(object2DOffsetCoordinates[1]), objectOffset[0]) 
+            print(objectDistancefromDestination)
+            # If less than threshold, stop moving
+            if objectDistancefromDestination >= objectDistancefromDestinationThreshold:
+                objectOffset = ( (object2DOffsetCoordinates[0]), (object2DOffsetCoordinates[1]), objectOffset[2]) 
+                print(objectOffset)
+                # objectOffset = ( int(1), int(1), objectOffset[0]) 
+            else: 
+              toUpdateOffset = False
 
 
-
+        # objectOffset = ( objectOffset[0] + int(1), int(1), objectOffset[0]) 
         # obtain 3D projection matrix from homography matrix and camera parameters
         projection = projection_matrix(intrinsicMatrix, homography)  
         # project cube or model
@@ -269,10 +278,12 @@ def render(img, obj, projection, model, positionOffset = (0, 0, 0), color=False)
       points = np.dot(points, scale_matrix)
       # render model in the middle of the reference surface. To do so,
       # model points must be displaced
-      points = np.array([[p[0] + w / 2 + positionOffset[0], p[1] + h / 2 + positionOffset[1], p[2] + positionOffset[2]] for p in points])
+      points = np.array([[p[0] + w / 2, p[1] + h / 2, p[2] ] for p in points])
 
-
+      positionOffset2D = positionOffset[:-1]
       dst = cv2.perspectiveTransform(points.reshape(-1, 1, 3), projection)
+      positionOffsets =  [[ positionOffset2D], [ positionOffset2D], [ positionOffset2D] ] 
+      dst = dst + np.array( positionOffsets )
       imgpts = np.int32(dst)
       if color is False:
           cv2.fillConvexPoly(img, imgpts, (137, 27, 211))
@@ -283,8 +294,8 @@ def render(img, obj, projection, model, positionOffset = (0, 0, 0), color=False)
 if __name__ == "__main__":
   
   # Selecting the source and destination markers to be used
-  source_marker = "marker_photos/marker_2.jpg"
-  destination_marker = "marker_photos/circularMarker.jpg"
+  source_marker = "marker_photos/marker_4.jpg"
+  destination_marker = "marker_photos/marker_5.jpg"
 
   # Initialing the marker keypoint database with source and destination markers
   initialiseDataBase([source_marker, destination_marker])
