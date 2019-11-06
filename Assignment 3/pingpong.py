@@ -92,63 +92,92 @@ def findMarkerMidPointInFrame(frameKeyPointDescriptorTuple, markerModelShape, ma
 
 ''' Returns a unit vector in the specified direction of the vector'''
 def normalize(v):
-    norm=np.linalg.norm(v, ord=2)
-    if norm==0:
-      return v
-    return v/norm
+  norm=np.linalg.norm(v, ord=2)
+  if norm==0:
+    return v
+  return v/norm
 
 
-def featureMatching(sourceMarkerFileName, destinationMarkerFileName):
+def featureMatching(playerOneMarkerFileName, playerTwoMarkerFileName):
   ''' Match the features of model to scene '''
 
-  # For source marker model
-  model = cv2.imread(sourceMarkerFileName, 0)
-  source_kp_model, source_des_model = keyPointDataBase[sourceMarkerFileName]
+  # NOTE: Here, taking position of ball wrt Player 1 only
+
+  # For player 1 marker model
+  playerOneMarkermodel = cv2.imread(playerOneMarkerFileName, 0)
+  playerOne_kp_model, playerOne_des_model = keyPointDataBase[playerOneMarkerFileName]
 
   # For destination marker model
-  destinationMarkerModel = cv2.imread(destinationMarkerFileName, 0)
-  destination_kp_model, destination_des_model = keyPointDataBase[destinationMarkerFileName]
-  
-  
+  playerTwoMarkerModel = cv2.imread(playerTwoMarkerFileName, 0)
+  playerTwo_kp_model, playerTwo_des_model = keyPointDataBase[playerTwoMarkerFileName]
+
+
   MIN_MATCHES = 10
 
   obj = OBJ('fox.obj', swapyz=True)
   intrinsicMatrix =  np.array([[872.5309487, 0.000000000000000000e+00, 418.59218933], 
-[0.000000000000000000e+00, 860.07596622, 244.32456827],
-[0.000000000000000000e+00, 0.000000000000000000e+00, 1.000000000000000000e+00]])
+  [0.000000000000000000e+00, 860.07596622, 244.32456827],
+  [0.000000000000000000e+00, 0.000000000000000000e+00, 1.000000000000000000e+00]])
 
   cap = cv2.VideoCapture(0)
 
   # Setting the kinematic properties of the object
   objectOffset = (0,0,0)
-  objectDistanceFromSource = 0.0
+  objectDistanceFromPlayerOne = 0.0
   objectSpeed = 0.5
-  # To stop the moving object when it reaches the destination
-  toUpdateOffset = True
+
+  objectDirection = np.random.rand(2)
+  # objectDirection = np.array([1, 0])
+  objectDirection = normalize(objectDirection)
+
+  object2DCoordinates = np.array([-1, -1])
+  # Offset from Player 1
+  object2DOffsetCoordinates = np.array([0, 0])
+
+
+  playerOneScore = 0
+  playerTwoScore = 0
+
+  # Whose Hitting turn is it
+  turn = "Player2"
+
   while True:
-    
+
+    objectSpeed += 0.05
+
     #Initialising homography as None
     homography = None
 
     # read the current frame
     ret, frame = cap.read()
+    
     if not ret:
       print("Unable to capture video")
       return 
+
+    # Getting the dimensions of the frame
+    frameLength, frameWidth, frameDepth = frame.shape
+
+    # Drawing the line, which denotes the net
+    lineThickness = 2
+    cv2.line(frame, (int(frameWidth/2), 0), (int(frameWidth/2), frameLength), (0,255,0), lineThickness)
+
+
+
     # Compute scene keypoints and its descriptors
     kp_frame, des_frame = orb.detectAndCompute(frame, None)
     # Match frame descriptors with model descriptors
-    matches = bf.match(source_des_model, des_frame)
+    matches = bf.match(playerOne_des_model, des_frame)
     matches = sorted(matches, key=lambda x: x.distance)
     # Sorting out good matches
     # TODO: Hardcoded, need a better measure
     maxDistance = 30
     # Number of good matches
     good_matches = [m for m in matches if m.distance < maxDistance]
-    
+
     if len(good_matches) > MIN_MATCHES:
       # differentiate between source points and destination points
-      src_pts = np.float32([source_kp_model[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+      src_pts = np.float32([playerOne_kp_model[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
       dst_pts = np.float32([kp_frame[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
       # compute Homography
       reprojThresh = 4.0
@@ -159,77 +188,132 @@ def featureMatching(sourceMarkerFileName, destinationMarkerFileName):
       
       # if a valid homography matrix was found render cube on model plane
       if homography is not None:
-        h, w = model.shape
+        h, w = playerOneMarkermodel.shape
         pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
         # project corners into frame
         dst = cv2.perspectiveTransform(pts, homography)
         # connect them with lines  
         frame = cv2.polylines(frame, [np.int32(dst)], True, 255, 3, cv2.LINE_AA) 
+        
 
         # Finding the midpoints for source and destination markers
-        sourceMarkerMidPointArray = np.array( [ np.mean( dst[:, 0, 0] ), np.mean( dst[:, 0, 1] ) ] )
-        destinationMarkerMidPointArray = findMarkerMidPointInFrame((kp_frame, des_frame), destinationMarkerModel.shape, destinationMarkerFileName)
-        print(sourceMarkerMidPointArray)
-        print(destinationMarkerMidPointArray)
+        playerOneMarkerMidPointArray = np.array( [ np.mean( dst[:, 0, 0] ), np.mean( dst[:, 0, 1] ) ] )
+        playerTwoMarkerMidPointArray = findMarkerMidPointInFrame((kp_frame, des_frame), playerTwoMarkerModel.shape, playerTwoMarkerFileName)
 
-        doesDirectionVectorExist = False
 
-        if not destinationMarkerMidPointArray.size == 0:
-          directionVectorForObject = destinationMarkerMidPointArray - sourceMarkerMidPointArray
-          unitDirectionVectorForObject = normalize(directionVectorForObject)
-          doesDirectionVectorExist = True
-
-        #If closer than this, then stop updating
-        objectDistancefromDestinationThreshold = 5.0
+        # Set object 2D coordinates      
+        if object2DCoordinates[0] == -1 and object2DCoordinates[1] == -1:
+          object2DCoordinates = np.array(playerOneMarkerMidPointArray)
+        else:
+          object2DCoordinates = np.add(object2DCoordinates , objectDirection * np.float64(np.int64(objectSpeed))) # SO that the speed increases gradually
         
-        if doesDirectionVectorExist:
-          if toUpdateOffset:
-            # Updating the object distance from source
-            objectDistanceFromSource += objectSpeed
-            # Updating the object offset coordinates
-            object2DOffsetCoordinates = objectDistanceFromSource * unitDirectionVectorForObject
-            # Updating the object 2D coordinates
-            object2DCoordinates = sourceMarkerMidPointArray + object2DOffsetCoordinates
-            print(object2DCoordinates)
+        # Updating the object offset coordinates
+        object2DOffsetCoordinates = object2DCoordinates - playerOneMarkerMidPointArray
 
-            # Calculating object distance from destination
-            vector = (destinationMarkerMidPointArray - object2DCoordinates)
-            vectorNorm = np.linalg.norm(vector, ord=2)
-            objectDistancefromDestination = vectorNorm
+        objectOffset = ( (object2DOffsetCoordinates[0]), (object2DOffsetCoordinates[1]), objectOffset[2]) 
+          
+          
+        # Updating the object distance from Player One
+        vectorNorm = np.linalg.norm(object2DOffsetCoordinates, ord=2)
+        objectDistanceFromPlayerOne = vectorNorm
 
-            print(objectDistancefromDestination)
-            # If less than threshold, stop moving
-            if objectDistancefromDestination >= objectDistancefromDestinationThreshold:
-                objectOffset = ( (object2DOffsetCoordinates[0]), (object2DOffsetCoordinates[1]), objectOffset[2]) 
-                print(objectOffset)
-                # objectOffset = ( int(1), int(1), objectOffset[0]) 
-            else: 
-              toUpdateOffset = False
+        # Initialising the distance to infinity
+        objectDistanceFromPlayerTwo = np.inf
+
+        doesPlayerTwoExist = not (playerTwoMarkerMidPointArray.size == 0)
+
+        
+        if doesPlayerTwoExist:
+          # Calculating object distance from destination
+          vector = (playerTwoMarkerMidPointArray - object2DCoordinates)
+          objectDistanceFromPlayerTwo = np.linalg.norm(vector, ord=2)
+
+        ''' Checking for collision with marker which has its turn'''
+        
+        # ? Doubt if frame_height or frame_width
+        objectInAreaOne = object2DCoordinates[0] < frameWidth/2
+        objectInAreaTwo = object2DCoordinates[0] > frameWidth/2
+
+        # If closer than this, then reflect
+        objectDistanceThreshold = 50.0
+
+        print(turn)
+        print(objectInAreaOne)
+        print(objectInAreaTwo)
+
+        print(objectDistanceFromPlayerOne)
+        print(objectDistanceFromPlayerTwo)
+
+        # Reflecting code
+        if turn == "Player1" and objectInAreaOne == True:
+          # If less than threshold, stop moving
+          if objectDistanceFromPlayerOne < objectDistanceThreshold:
+            # Reversing the x direction
+            objectDirection[0] = - objectDirection[0]
+            turn = "Player2"
+
+        if turn == "Player2" and objectInAreaTwo == True:
+          # If less than threshold, stop moving
+          if objectDistanceFromPlayerTwo < objectDistanceThreshold:
+            # Reversing the x direction
+            objectDirection[0] = - objectDirection[0]
+            turn = "Player1"
+
+        ''' Checking if ball is out of the playing area '''
+        toRestart = 0
+
+        # ? Doubt if height or length
+        if object2DCoordinates[0] > frameWidth or object2DCoordinates[0] < 0:
+          toRestart = 1
+        
+        if object2DCoordinates[1] > frameLength or object2DCoordinates[1] < 0:
+          toRestart = 1
+
+        if toRestart == 1:
+          # Setting the kinematic properties of the object
+          objectOffset = (0,0,0)
+          objectDistanceFromPlayerOne = 0.0
+          objectSpeed = 0.5
+
+          objectDirection = np.random.rand(2)
+          # objectDirection = np.array([1, 0])
+          objectDirection = normalize(objectDirection)
+
+          object2DCoordinates = np.array([-1, -1])
+          # Offset from Player 1
+          object2DOffsetCoordinates = np.array([0, 0])
+
+          # Whose Hitting turn is it
+          turn = "Player2"
+          
+
+          
 
 
-        # objectOffset = ( objectOffset[0] + int(1), int(1), objectOffset[0]) 
+
         # obtain 3D projection matrix from homography matrix and camera parameters
         projection = projection_matrix(intrinsicMatrix, homography)  
         # project cube or model
-        frame = render(frame, obj, projection, model, objectOffset, False) 
+        frame = render(frame, obj, projection, playerOneMarkermodel, objectOffset, False) 
 
-        
+          
 
         # if doesDirectionVectorExist and objectDistancefromDestination < objectDistancefromDestinationThreshold :
         #   objectOffset = ((objectOffset[0] + deltaDisplacementForObject[0]), (objectOffset[1] + deltaDisplacementForObject[1]), objectOffset[2])
 
       else:
-        print("Homography couldnt be computed for marker %s" % (sourceMarkerFileName))                    
+        print("Homography couldnt be computed for marker %s" % (playerOneMarkerFileName))                    
       # show result
       # cv2.imshow('frame', frame)
       # cv2.waitKey(0)
     else:
-      print ("Not enough matches for marker %s have been found - %d/%d" % (sourceMarkerFileName, len(good_matches),
-                                                            MIN_MATCHES))
+      print ("Not enough matches for marker %s have been found - %d/%d" % (playerOneMarkerFileName, len(good_matches),
+                                                          MIN_MATCHES))
     # show result
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        break 
+      break 
+
   cap.release()
   cv2.destroyAllWindows()
   return 0                                                        
@@ -294,11 +378,12 @@ def render(img, obj, projection, model, positionOffset = (0, 0, 0), color=False)
 if __name__ == "__main__":
   
   # Selecting the source and destination markers to be used
-  source_marker = "marker_photos/marker_4.jpg"
-  destination_marker = "marker_photos/marker_5.jpg"
+  playerOneMarker = "marker_photos/marker_5.jpg"
+  
+  playerTwoMarker = "marker_photos/marker_4.jpg" 
 
   # Initialing the marker keypoint database with source and destination markers
-  initialiseDataBase([source_marker, destination_marker])
+  initialiseDataBase([playerOneMarker, playerTwoMarker])
   
   # Computes and renders the augmented image
-  featureMatching(source_marker, destination_marker)
+  featureMatching(playerOneMarker, playerTwoMarker)
