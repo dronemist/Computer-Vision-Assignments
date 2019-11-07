@@ -15,6 +15,8 @@ def createDatabase(path, sizeOfImage, imageName, numberOfImages):
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
     count -= 1
+  cap.release()
+  cv2.destroyAllWindows()  
 
 if __name__ == "__main__":
   createDatabase(sys.argv[1], (50, 50), sys.argv[2], 500)

@@ -9,6 +9,7 @@ from keras.layers.core import Dropout
 from keras.layers.core import Dense
 from keras import backend as K
 
+# TODO: number of layers?
 class GestureRecognizer:
   def build(width, height, depth, classes):
 
@@ -40,7 +41,6 @@ class GestureRecognizer:
 
     # softmax classifier
     model.add(Flatten())
-    model.add(Dense(classes))
-    model.add(Activation("softmax"))
-    
+    model.add(Dense(classes, activation="softmax"))
+    print(len(model._layers))
     return model

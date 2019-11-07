@@ -50,7 +50,6 @@ labels = np.array(labels)
 lb = LabelBinarizer()
 trainY = lb.fit_transform(trainY)
 testY = lb.transform(testY)
-print(trainY)
 
 # construct the image generator for data augmentation
 aug = ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
@@ -83,5 +82,11 @@ H = model.fit_generator(aug.flow(trainX, trainY, batch_size=BS),
 print("[INFO] evaluating network...")
 predictions = model.predict(testX, batch_size=32)
 print(classification_report(testY.argmax(axis=1),
-	predictions.argmax(axis=1), target_names=lb.classes_))		
+predictions.argmax(axis=1), target_names=lb.classes_))	
+
+# Saving the model
+model.save("model")
+f = open("label_bin", "wb")
+f.write(pickle.dumps(lb))
+f.close()
   
