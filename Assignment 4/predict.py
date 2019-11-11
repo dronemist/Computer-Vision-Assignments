@@ -4,6 +4,8 @@ import pickle
 import cv2
 import sys
 
+from preprocess import preprocess
+
 # Image to predict
 cap = cv2.VideoCapture(0)
 # load the model and label binarizer
@@ -13,10 +15,12 @@ lb = pickle.loads(open("label_bin", "rb").read())
 while True:
   ret, image = cap.read()
   output = image.copy()
-  image = cv2.resize(image, (50, 50))
 
-  # scale the pixel values to [0, 1]
-  image = image.astype("float") / 255.0
+  image = preprocess(image)
+  # image = cv2.resize(image, (50, 50))
+
+  # # scale the pixel values to [0, 1]
+  # image = image.astype("float") / 255.0
 
   image = image.reshape((1, image.shape[0], image.shape[1],
 		image.shape[2]))
