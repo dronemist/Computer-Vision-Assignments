@@ -36,6 +36,7 @@ for imagePath in imagePaths:
 
 # scale the raw pixel intensities to the range [0, 1]
 data = np.array(data, dtype="float") / 255.0
+
 labels = np.array(labels)
 
 # partition the data into training and testing splits using 80% of
@@ -62,7 +63,7 @@ model = GestureRecognizer.build(width=50, height=50, depth=3,
 
 # initialize our initial learning rate, # of epochs to train for,
 # and batch size
-INIT_LR = 0.01
+INIT_LR = 0.05
 EPOCHS = 10
 BS = 32
 

@@ -9,8 +9,10 @@ def createDatabase(path, sizeOfImage, imageName, numberOfImages):
   while count > 0:
     # Reading frame by frame
     ret, frame = cap.read()
+    # cv2.imshow('frame', frame)
     frame = cv2.resize(frame, sizeOfImage)
     cv2.imwrite(path + '/' + imageName + str(count) + '.jpg', frame)
+    print(count)
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
