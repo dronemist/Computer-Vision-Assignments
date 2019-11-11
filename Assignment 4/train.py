@@ -57,7 +57,6 @@ aug = ImageDataGenerator(rotation_range=30, width_shift_range=0.1,
 	height_shift_range=0.1, shear_range=0.2, zoom_range=0.2,
 	horizontal_flip=True, fill_mode="nearest")
 
-# initialize our VGG-like Convolutional Neural Network
 model = GestureRecognizer.build(width=50, height=50, depth=3,
 	classes=len(lb.classes_))
 
@@ -84,6 +83,18 @@ print("[INFO] evaluating network...")
 predictions = model.predict(testX, batch_size=32)
 print(classification_report(testY.argmax(axis=1),
 predictions.argmax(axis=1), target_names=lb.classes_))	
+
+# plot the training loss and accuracy
+N = np.arange(0, EPOCHS)
+plt.style.use("ggplot")
+plt.figure()
+plt.plot(N, H.history["loss"], label="train_loss")
+plt.plot(N, H.history["val_loss"], label="val_loss")
+plt.title("Training Loss and Accuracy")
+plt.xlabel("Epoch #")
+plt.ylabel("Loss/Accuracy")
+plt.legend()
+plt.savefig('plot.jpg')
 
 # Saving the model
 model.save("model")
