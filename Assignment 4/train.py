@@ -1,4 +1,5 @@
 from Model import GestureRecognizer
+from preprocess import preprocess
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -26,7 +27,8 @@ for imagePath in imagePaths:
 	# spatial dimensions of SmallVGGNet), and store the image in the
 	# data list
 	image = cv2.imread(imagePath)
-	image = cv2.resize(image, (50, 50))
+	# image = cv2.resize(image, (50, 50))
+	image = preprocess(image)
 	data.append(image)
 
 	# extract the class label from the image path and update the
@@ -35,7 +37,7 @@ for imagePath in imagePaths:
 	labels.append(label)
 
 # scale the raw pixel intensities to the range [0, 1]
-data = np.array(data, dtype="float") / 255.0
+data = np.array(data, dtype="float") #/ 255.0
 
 labels = np.array(labels)
 
