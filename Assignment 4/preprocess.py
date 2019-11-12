@@ -20,7 +20,7 @@ from imutils import paths
 #     cv2.waitKey(0)
 #     # cv2.imwrite('preprocessed/image' + str(count) + 'jpg', fgmask) 
 #     count += 1
-    
+fgbg = cv2.createBackgroundSubtractorMOG2(0, 50)    
 ''' For histogram equalization of the image '''
 def histogramEqualizeImage(image):
   img_yuv = cv2.cvtColor(image, cv2.COLOR_BGR2YUV)
@@ -40,8 +40,9 @@ def preprocess(image):
   # equalizedImage = histogramEqualizeImage(resizedImage)
   equalizedImage = cv2.equalizeHist(resizedImage)
   # scale the pixel values to [0, 1]
+  # equalizedImage = fgbg.apply(equalizedImage,learningRate=0.1)
   scaledImage = equalizedImage.astype("float") / 255.0
-
+  
   outputImage = np.empty((scaledImage.shape[0], scaledImage.shape[1], 3))
 
   # Made Grayscale 3 times for easier code change and averaging out of the weights
@@ -53,11 +54,15 @@ def preprocess(image):
 
 if __name__ == "__main__":
   data = []
-  imagePaths = sorted(list(paths.list_images('gestures')))
+  imagePaths = sorted(list(paths.list_images('gestures/next')))
   for imagePath in imagePaths:
     # load the image, resize it to 50x50 pixels 
     # , and store the image in the data list
     image = cv2.imread(imagePath)
-    image = cv2.resize(image, (50, 50))
-    data.append(image)
-  preprocess(data)
+    image = preprocess(image)
+    edges = cv2.Canny(image,10,200) 
+  
+    # Display edges in a frame 
+    cv2.imshow('Edges',edges)
+    cv2.imshow('adsa', image)
+    cv2.waitKey(0)

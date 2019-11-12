@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import sys
+from preprocess import preprocess
 
 def createDatabase(path, sizeOfImage, imageName, numberOfImages, imagesToSkip):
   '''Adds numberOfImages images to path folder'''
@@ -22,5 +23,5 @@ def createDatabase(path, sizeOfImage, imageName, numberOfImages, imagesToSkip):
   cv2.destroyAllWindows()  
 
 if __name__ == "__main__":
-  createDatabase(sys.argv[1], (50, 50), sys.argv[2], 1000, 10)
+  createDatabase(sys.argv[1], (50, 50), sys.argv[2], 999, 10)
   

@@ -15,8 +15,9 @@ lb = pickle.loads(open("label_bin", "rb").read())
 while True:
   ret, image = cap.read()
   output = image.copy()
-
+  output = cv2.resize(output, (200, 200))
   image = preprocess(image)
+  # output = image.copy()
   # image = cv2.resize(image, (50, 50))
 
   # # scale the pixel values to [0, 1]

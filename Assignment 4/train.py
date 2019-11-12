@@ -65,7 +65,7 @@ model = GestureRecognizer.build(width=50, height=50, depth=3,
 # initialize our initial learning rate, # of epochs to train for,
 # and batch size
 INIT_LR = 0.05
-EPOCHS = 10
+EPOCHS = 50
 BS = 32
 
 # initialize the model and optimizer (you'll want to use
@@ -88,15 +88,26 @@ predictions.argmax(axis=1), target_names=lb.classes_))
 
 # plot the training loss and accuracy
 N = np.arange(0, EPOCHS)
+
+# Training loss
 plt.style.use("ggplot")
 plt.figure()
 plt.plot(N, H.history["loss"], label="train_loss")
-plt.plot(N, H.history["val_loss"], label="val_loss")
-plt.title("Training Loss and Accuracy")
+plt.title("Training Loss")
 plt.xlabel("Epoch #")
-plt.ylabel("Loss/Accuracy")
+plt.ylabel("Training Loss")
 plt.legend()
-plt.savefig('plot.jpg')
+plt.savefig('trainingLoss.jpg')
+
+# Validation loss
+plt.style.use("ggplot")
+plt.figure()
+plt.plot(N, H.history["val_loss"], label="val_loss")
+plt.title("Validation Loss")
+plt.xlabel("Epoch #")
+plt.ylabel("Validation Loss")
+plt.legend()
+plt.savefig('validationLoss.jpg')
 
 # Saving the model
 model.save("model")
