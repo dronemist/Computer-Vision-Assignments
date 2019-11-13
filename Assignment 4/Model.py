@@ -27,9 +27,12 @@ class GestureRecognizer:
 
     # Making the first model
     # CONV => CONV => MAXPOOL => CONV => MAXPOOL
-    model.add(Conv2D(32, (3, 3), padding="same", activation='relu', input_shape=inputShape))
+    model.add(Conv2D(32, (7, 7), padding="same", activation='relu', input_shape=inputShape))
     model.add(BatchNormalization(axis=chanDim))
-    model.add(Conv2D(32, (3, 3), padding="same", activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25)) 
+
+    model.add(Conv2D(32, (5, 5), padding="same", activation='relu'))
     model.add(BatchNormalization(axis=chanDim))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25)) 
