@@ -110,6 +110,8 @@ if __name__ == "__main__":
     baseFrameFileName = "./gesturesTemp2/previous/previous999bg.jpg"
     backgroundModel = getBaseBackGroundModel(baseFrameFileName)
     data = []
+    typeOfGesture = "play"
+    preprocessedImagesFolderName = "./preprocessed"
     # print(i)
     imagePaths = sorted(list(paths.list_images('gesturesTemp2/previous')))
     for imagePath in imagePaths:
@@ -126,6 +128,11 @@ if __name__ == "__main__":
       # cv2.imshow('da', image)
       cv2.waitKey(0)
       
+      imgToWrite = preprocessedImagesFolderName + '/' + typeOfGesture + '/' + str(i) + ".jpg"
+      cv2.imwrite(imgToWrite, image)
+      print(imgToWrite)
+      i = i + 1
+
       # edges = cv2.Canny(image,10,200) 
       # cv2.waitKey(0)
       # Display edges in a frame 
