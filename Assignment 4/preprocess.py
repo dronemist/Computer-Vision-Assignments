@@ -105,19 +105,20 @@ def preprocess(image):
 if __name__ == "__main__":
 
   # for i in range(1,500):
-    baseFrameFileName = "./gestures/background/bg" + str(115) + ".jpg"
+    # baseFrameFileName = "./gestures/background/bg" + str(115) + ".jpg"
+    baseFrameFileName = "./gesturesTemp2/next/next999bg.jpg"
     backgroundModel = getBaseBackGroundModel(baseFrameFileName)
     data = []
     # print(i)
-    imagePaths = sorted(list(paths.list_images('gestures/background')))
+    imagePaths = sorted(list(paths.list_images('gesturesTemp2/next')))
     for imagePath in imagePaths:
       # load the image, resize it to 50x50 pixels 
       # , and store the image in the data list
       image = cv2.imread(imagePath)
       # image = histogramEqualizeImage(image)
+      image = cv2.resize(image, (50,50))
       image = removeBG(image, backgroundModel, learningRate = 0)
       image = drawImageContours(image)
-      image = preprocess(image)
       cv2.imshow('adsa', image)
       cv2.waitKey(0)
       

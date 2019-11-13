@@ -15,10 +15,10 @@ def createDatabase(path, sizeOfImage, imageName, numberOfImages, imagesToSkip):
   while count > 0:
     # Reading frame by frame
     ret, frame = cap.read()
+    frame = cv2.resize(frame, sizeOfImage)
     cv2.imshow('frame1', frame)
     if isBgCaptured:
       # cv2.imshow('frame', frame)
-      frame = cv2.resize(frame, sizeOfImage)
       if count % imagesToSkip == 0: # Images to skip denotes that we have to take every ith image
         cv2.imwrite(path + '/' + imageName + str(count) + '.jpg', frame)
       print(count)
@@ -36,5 +36,5 @@ def createDatabase(path, sizeOfImage, imageName, numberOfImages, imagesToSkip):
   cv2.destroyAllWindows()  
 
 if __name__ == "__main__":
-  createDatabase(sys.argv[1], (200, 200), sys.argv[2], 999, 10)
+  createDatabase(sys.argv[1], (200, 200), sys.argv[2], 100, 2)
   
