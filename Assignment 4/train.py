@@ -1,11 +1,11 @@
 from Model import GestureRecognizer
-from preprocess import preprocess
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from keras.preprocessing.image import ImageDataGenerator
 from keras.optimizers import SGD
 from imutils import paths
+import preprocess
 import matplotlib.pyplot as plt
 import numpy as np
 import argparse
@@ -16,6 +16,14 @@ import os
 
 data = []
 labels = []
+
+
+
+baseFrameFileName = "./gestures/background/bg1.jpg"
+backgroundModel = preprocess.getBaseBackGroundModel(baseFrameFileName)
+
+
+
 
 # grab the image paths and randomly shuffle them
 imagePaths = sorted(list(paths.list_images('gestures')))
@@ -28,7 +36,9 @@ for imagePath in imagePaths:
 	# data list
 	image = cv2.imread(imagePath)
 	# image = cv2.resize(image, (50, 50))
-	image = preprocess(image)
+	image = preprocess.preprocess(image)
+	image = preprocess.removeBG(image, backgroundModel, learningRate = 0)
+	image = preprocess.drawImageContours(image)
 	data.append(image)
 
 	# extract the class label from the image path and update the
@@ -65,7 +75,7 @@ model = GestureRecognizer.build(width=50, height=50, depth=3,
 # initialize our initial learning rate, # of epochs to train for,
 # and batch size
 INIT_LR = 0.05
-EPOCHS = 50
+EPOCHS = 10
 BS = 32
 
 # initialize the model and optimizer (you'll want to use
