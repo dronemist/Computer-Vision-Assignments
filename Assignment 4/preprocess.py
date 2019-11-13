@@ -105,12 +105,15 @@ def preprocess(image):
 if __name__ == "__main__":
 
   # for i in range(1,500):
-    # baseFrameFileName = "./gestures/background/bg" + str(115) + ".jpg"
-    baseFrameFileName = "./gesturesTemp2/next/next999bg.jpg"
+    baseFrameFileName = "./gestures/background/bg" + str(115) + ".jpg"
+    # baseFrameFileName = "./gesturesTemp2/next/next999bg.jpg"
     backgroundModel = getBaseBackGroundModel(baseFrameFileName)
     data = []
+    typeOfGesture = "play"
+    preprocessedImagesFolderName = "./preprocessed"
     # print(i)
-    imagePaths = sorted(list(paths.list_images('gesturesTemp2/next')))
+    imagePaths = sorted(list(paths.list_images('gestures/' + typeOfGesture)))
+    i = 0
     for imagePath in imagePaths:
       # load the image, resize it to 50x50 pixels 
       # , and store the image in the data list
@@ -122,6 +125,11 @@ if __name__ == "__main__":
       cv2.imshow('adsa', image)
       cv2.waitKey(0)
       
+      imgToWrite = preprocessedImagesFolderName + '/' + typeOfGesture + '/' + str(i) + ".jpg"
+      cv2.imwrite(imgToWrite, image)
+      print(imgToWrite)
+      i = i + 1
+
       # edges = cv2.Canny(image,10,200) 
       # cv2.waitKey(0)
       # Display edges in a frame 
