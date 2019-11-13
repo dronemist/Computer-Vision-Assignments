@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import copy
+import os
 from imutils import paths
 
 ''' For histogram equalization of the image '''
@@ -19,7 +20,7 @@ def histogramEqualizeImage(image):
 def drawImageContours(img):
 
   threshold = 60  #  BINARY threshold
-  blurValue = 1 # GaussianBlur parameter
+  blurValue = 5 # GaussianBlur parameter
 
   # convert the image into binary image
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -106,11 +107,11 @@ if __name__ == "__main__":
 
   # for i in range(1,500):
     # baseFrameFileName = "./gestures/background/bg" + str(115) + ".jpg"
-    baseFrameFileName = "./gesturesTemp2/next/next999bg.jpg"
+    baseFrameFileName = "./gesturesTemp2/previous/previous999bg.jpg"
     backgroundModel = getBaseBackGroundModel(baseFrameFileName)
     data = []
     # print(i)
-    imagePaths = sorted(list(paths.list_images('gesturesTemp2/next')))
+    imagePaths = sorted(list(paths.list_images('gesturesTemp2/previous')))
     for imagePath in imagePaths:
       # load the image, resize it to 50x50 pixels 
       # , and store the image in the data list
@@ -119,7 +120,10 @@ if __name__ == "__main__":
       image = cv2.resize(image, (50,50))
       image = removeBG(image, backgroundModel, learningRate = 0)
       image = drawImageContours(image)
-      cv2.imshow('adsa', image)
+      label = imagePath.split(os.path.sep)[-1]
+      print(label)
+      cv2.imwrite('preprocessed/previous/' + str(label), image)
+      # cv2.imshow('da', image)
       cv2.waitKey(0)
       
       # edges = cv2.Canny(image,10,200) 
