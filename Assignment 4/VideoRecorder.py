@@ -23,5 +23,5 @@ def createDatabase(path, sizeOfImage, imageName, numberOfImages, imagesToSkip):
   cv2.destroyAllWindows()  
 
 if __name__ == "__main__":
-  createDatabase(sys.argv[1], (50, 50), sys.argv[2], 999, 10)
+  createDatabase(sys.argv[1], (200, 200), sys.argv[2], 999, 10)
   

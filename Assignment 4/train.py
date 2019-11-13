@@ -36,9 +36,9 @@ for imagePath in imagePaths:
 	# data list
 	image = cv2.imread(imagePath)
 	# image = cv2.resize(image, (50, 50))
-	image = preprocess.preprocess(image)
 	image = preprocess.removeBG(image, backgroundModel, learningRate = 0)
 	image = preprocess.drawImageContours(image)
+	image = preprocess.preprocess(image)
 	data.append(image)
 
 	# extract the class label from the image path and update the
@@ -107,7 +107,7 @@ plt.title("Training Loss")
 plt.xlabel("Epoch #")
 plt.ylabel("Training Loss")
 plt.legend()
-plt.savefig('trainingLoss.jpg')
+plt.savefig('trainingLoss2.jpg')
 
 # Validation loss
 plt.style.use("ggplot")
@@ -117,11 +117,11 @@ plt.title("Validation Loss")
 plt.xlabel("Epoch #")
 plt.ylabel("Validation Loss")
 plt.legend()
-plt.savefig('validationLoss.jpg')
+plt.savefig('validationLoss2.jpg')
 
 # Saving the model
-model.save("model")
-f = open("label_bin", "wb")
+model.save("model2")
+f = open("label_bin2", "wb")
 f.write(pickle.dumps(lb))
 f.close()
   
