@@ -22,7 +22,7 @@ These include the assignments completed for the course _Computer Vision_ under [
 4) **_Assignment 4: Camera based music player controller_** </br>
 [more](Assignment%204/problem_statement.pdf).
     - Trained a neural network to identify different gestures. 
-    - Detailed [Report](Assignment%203/Report4(1).pdf).
+    - Detailed [Report](Assignment%204/Report4(1).pdf).
 #### Note
 All the assignments have been built using python 3.7.0 and OpenCV.
    
